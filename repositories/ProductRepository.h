@@ -12,7 +12,9 @@ public:
     std::vector<Product> getByManufacturer(int manufacturerId) override;
     std::vector<Product> getByType(int productType) override;
     bool updateQuantity(int id, int newQuantity) override;
-
+    int totalCount() override;
+    double totalValue() override;
+    std::vector<ProductWithManufacturer> getAllWithManufacturer() override;
 private:
     static Product fromStatement(sqlite3_stmt* stmt);
 };

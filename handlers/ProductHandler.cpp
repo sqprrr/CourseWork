@@ -43,16 +43,17 @@ void ProductHandler::handleList() {
                   << std::setw(25) << p.name
                   << std::setw(12) << std::fixed << std::setprecision(2) << p.price
                   << std::setw(10) << p.quantity
-                  << std::setw(8)  << p.product_type
+                  << std::setw(15) << getTypeName(p.product_type)
                   << p.manufacturer_id << "\n";
     }
 }
-
 void ProductHandler::handleGet() {
     int choice;
     std::cout << "\n1 - Всі товари\n"
               << "2 - За виробником\n"
               << "3 - За ID\n"
+              << "4 - З назвами виробників\n"
+              << "5 - Статистика складу\n"
               << "Вибір: ";
     std::cin >> choice;
 
@@ -65,10 +66,8 @@ void ProductHandler::handleGet() {
         std::cin >> manufacturerId;
 
         auto products = productRepo_.getByManufacturer(manufacturerId);
-        if (products.empty()) {
-            std::cout << "Товарів не знайдено.\n";
-            return;
-        }
+        if (products.empty()) { std::cout << "Товарів не знайдено.\n"; return; }
+
         for (const auto& p : products)
             std::cout << "[" << p.id << "] " << p.name
                       << " — " << p.price << " грн"
@@ -80,13 +79,41 @@ void ProductHandler::handleGet() {
         std::cin >> id;
 
         auto product = productRepo_.getById(id);
-        if (!product) {
-            std::cout << "[ERR] Товар не знайдено.\n";
-            return;
-        }
+        if (!product) { std::cout << "[ERR] Товар не знайдено.\n"; return; }
+
         std::cout << "[" << product->id << "] " << product->name
                   << " — " << product->price << " грн"
                   << " | кількість: " << product->quantity << "\n";
+
+    } else if (choice == 4) {
+        auto list = productRepo_.getAllWithManufacturer();
+        if (list.empty()) { std::cout << "Список порожній.\n"; return; }
+
+        std::cout << "\n--- Товари з виробниками ---\n";
+        std::cout << std::left
+                  << std::setw(5)  << "ID"
+                  << std::setw(25) << "Товар"
+                  << std::setw(12) << "Ціна"
+                  << std::setw(10) << "К-сть"
+                  << "Виробник\n"
+                  << std::string(60, '-') << "\n";
+
+        for (const auto& pw : list)
+            std::cout << std::left
+                      << std::setw(5)  << pw.id
+                      << std::setw(25) << pw.productName
+                      << std::setw(12) << std::fixed << std::setprecision(2) << pw.price
+                      << std::setw(10) << pw.quantity
+                      << pw.manufacturerName << "\n";
+
+    } else if (choice == 5) {
+        int total = productRepo_.totalCount();
+        double value = productRepo_.totalValue();
+
+        std::cout << "\n--- Статистика складу ---\n"
+                  << "Qtotal (загальна кількість одиниць): " << total << "\n"
+                  << "Vtotal (загальна вартість запасів):  "
+                  << std::fixed << std::setprecision(2) << value << " грн\n";
 
     } else {
         std::cout << "Невірний вибір.\n";
@@ -109,8 +136,14 @@ void ProductHandler::handleAdd() {
     std::cout << "Кількість: ";
     std::cin >> p.quantity;
 
-    std::cout << "Тип товару (число): ";
-    std::cin >> p.product_type;
+    int typeInput;
+    auto types = productTypeNames();
+    std::cout << "\nТипи товарів:\n";
+    for (const auto& [id, name] : types)
+        std::cout << "  [" << id << "] " << name << "\n";
+    std::cout << "Оберіть тип: ";
+    std::cin >> typeInput;
+    p.product_type = static_cast<ProductType>(typeInput);
 
     if (productRepo_.add(p))
         std::cout << "[OK] Товар додано.\n";
@@ -142,8 +175,10 @@ void ProductHandler::handleUpdate() {
     std::cout << "Нова кількість [" << p.quantity << "]: ";
     std::cin >> p.quantity;
 
-    std::cout << "Новий тип [" << p.product_type << "]: ";
-    std::cin >> p.product_type;
+    std::cout << "Новий тип [" << static_cast<int>(p.product_type) << "]: ";
+    int typeInput;
+    std::cin >> typeInput;
+    p.product_type = static_cast<ProductType>(typeInput);
 
     std::cout << "Змінити виробника? (1 - так / 0 - ні): ";
     int change;
