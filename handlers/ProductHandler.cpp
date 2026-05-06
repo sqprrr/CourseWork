@@ -132,6 +132,12 @@ void ProductHandler::handleAdd() {
 
     std::cout << "Ціна: ";
     std::cin >> p.price;
+    if (std::cin.fail()) {
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        std::cout << "[ERR] Некоректне значення ціни.\n";
+        return;
+    }
 
     std::cout << "Кількість: ";
     std::cin >> p.quantity;
@@ -171,6 +177,12 @@ void ProductHandler::handleUpdate() {
 
     std::cout << "Нова ціна [" << p.price << "]: ";
     std::cin >> p.price;
+    if (std::cin.fail()) {
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        std::cout << "[ERR] Некоректне значення ціни.\n";
+        return;
+    }
 
     std::cout << "Нова кількість [" << p.quantity << "]: ";
     std::cin >> p.quantity;
